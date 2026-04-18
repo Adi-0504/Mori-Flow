@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Forest Finance</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js dependency for charting feature -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        if (!localStorage.getItem('forest_finance_active_user')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-layout">
+        
+        <!-- Header -->
+        <header class="app-topbar">
+            <!-- Left Streak Counter -->
+            <div style="width:50px; display:flex; align-items:center;">
+                <div id="streak-badge" class="streak-badge" title="連續記帳天數">
+                    <i data-lucide="flame"></i><span id="streak-count" style="margin-left: 2px;">0</span>
+                </div>
+            </div> 
+            
+            <h1 id="page-title" data-i18n="title_ledger" style="flex:1; text-align:center;">帳本</h1>
+            
+            <!-- Global Setting Globe Icon -->
+            <div style="width:50px; display:flex; justify-content:flex-end;">
+                <button id="globe-btn" class="topbar-action-btn" aria-label="Global Settings">
+                    <i data-lucide="globe"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="pages-container">
+            
+            <!-- Ledger -->
+            <section id="page-ledger" class="page-section active">
+                <div class="calendar-wrapper">
+                    <div class="calendar-header">
+                        <button class="cal-btn" id="prev-month"><i data-lucide="chevron-left"></i></button>
+                        <h2 id="month-year-display"></h2>
+                        <button class="cal-btn" id="next-month"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid days-of-week" id="days-of-week-header">
+                        <!-- JS injected localized days -->
+                    </div>
+                    <div class="calendar-grid days-grid" id="calendar-days"></div>
+                </div>
+
+                <div class="transactions-section">
+                    <div class="section-header">
+                        <h2 id="selected-date-display" data-i18n="day_activity">紀錄</h2>
+                    </div>
+                    <div class="transaction-list" id="transaction-list"></div>
+                </div>
+            </section>
+
+            <!-- Accounts -->
+            <section id="page-accounts" class="page-section">
+                <div class="balance-section">
+                    <h2 style="margin-bottom:12px; font-weight:600; color:var(--text-primary); font-size: 1.1rem;" data-i18n="acc_total">總資產結餘</h2>
+                    <h1 class="main-balance" id="acc-total-balance">$0.00</h1>
+                    
+                    <div class="balance-summary" style="margin-top:24px;">
+                        <div class="summary-item income">
+                            <div class="summary-icon"><i data-lucide="arrow-down-left"></i></div>
+                            <div class="summary-text">
+                                <span class="summary-label" data-i18n="acc_total_in">歷史總收入</span>
+                                <span class="summary-amount" id="acc-total-income">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-item expense">
+                            <div class="summary-icon"><i data-lucide="arrow-up-right"></i></div>
+                            <div class="summary-text">
+                                <span class="summary-label" data-i18n="acc_total_out">歷史總支出</span>
+                                <span class="summary-amount" id="acc-total-expense">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Add -->
+            <section id="page-add" class="page-section">
+                <div class="form-wrapper">
+                    <div class="type-selector">
+                        <button type="button" class="type-btn active" data-type="expense" data-i18n="btn_add_expense">支出</button>
+                        <button type="button" class="type-btn" data-type="income" data-i18n="btn_add_income">收入</button>
+                    </div>
+
+                    <form id="tx-form">
+                        <input type="hidden" id="tx-type" value="expense">
+                        
+                        <div class="form-group">
+                            <label data-i18n="label_date">日期</label>
+                            <input type="date" id="tx-date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label data-i18n="label_amount">金額</label>
+                            <input type="number" id="tx-amount" step="0.01" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label data-i18n="label_category">類別</label>
+                            <select id="tx-category" required></select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label data-i18n="label_note">備註 (選填)</label>
+                            <input type="text" id="tx-note" data-i18n-pl="pl_note" placeholder="記錄細節" autocomplete="off">
+                        </div>
+                        
+                        <button type="submit" class="submit-btn" id="submit-btn" data-i18n="btn_save">儲存紀錄</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section id="page-charts" class="page-section">
+                <div class="form-wrapper" style="text-align:center;">
+                    <h2 style="margin-bottom:16px;font-size:1rem;color:var(--text-muted);" data-i18n="chart_title">歷史各類別支出比例</h2>
+                    <!-- Chart.js Canvas -->
+                    <div style="position:relative; width:100%; max-width:300px; margin: 0 auto; min-height:300px;">
+                        <canvas id="expenseChart"></canvas>
+                        <div id="chart-empty-msg" class="empty-state" style="display:none; position:absolute; top:50%; width:100%; transform:translateY(-50%);">
+                            <i data-lucide="pie-chart" style="width:36px;height:36px;opacity:0.5;margin-bottom:8px;"></i>
+                            <span data-i18n="chart_empty">無資料製圖</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings -->
+            <section id="page-settings" class="page-section">
+                <div class="settings-menu">
+                    <div class="settings-profile">
+                        <div class="profile-avatar"><i data-lucide="user"></i></div>
+                        <div class="profile-info">
+                            <p class="profile-name" id="display-userid">User</p>
+                            <p class="profile-sub">Local Device</p>
+                        </div>
+                    </div>
+                    
+                    <button class="settings-action danger" id="logout-btn">
+                        <i data-lucide="log-out"></i>
+                        <span data-i18n="btn_logout">登出帳號</span>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="page-ledger">
+                <i data-lucide="book"></i>
+                <span data-i18n="nav_ledger">帳本</span>
+            </button>
+            <button class="nav-item" data-target="page-accounts">
+                <i data-lucide="landmark"></i>
+                <span data-i18n="nav_accounts">帳戶</span>
+            </button>
+            <button class="nav-item tab-add" data-target="page-add">
+                <div class="fab-btn"><i data-lucide="plus"></i></div>
+                <span data-i18n="nav_add">記一筆</span>
+            </button>
+            <button class="nav-item" data-target="page-charts">
+                <i data-lucide="pie-chart"></i>
+                <span data-i18n="nav_charts">圖表</span>
+            </button>
+            <button class="nav-item" data-target="page-settings">
+                <i data-lucide="settings"></i>
+                <span data-i18n="nav_settings">設定</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Global Setting Modal -->
+    <div class="modal" id="global-setting-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="globe_title">語言與地區設定</h3>
+                <button class="close-btn" id="close-globe-modal" type="button"><i data-lucide="x"></i></button>
+            </div>
+            <div class="form-group">
+                <label data-i18n="globe_lang">選擇語言</label>
+                <select id="select-lang">
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label data-i18n="globe_curr">選擇幣別</label>
+                <select id="select-curr">
+                    <option value="TWD">TWD (新台幣)</option>
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="CNY">CNY (人民币)</option>
+                    <option value="JPY">JPY (日円)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                </select>
+            </div>
+            <button class="submit-btn" id="apply-globe-btn" data-i18n="btn_apply">套用</button>
+        </div>
+    </div>
+
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

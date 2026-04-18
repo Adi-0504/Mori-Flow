@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Forest Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="i18n.js"></script>
+    <style>
+        body.login-body {
+            padding: 0;
+            background-color: #E3E8E5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-card {
+            background-color: #F6F8F5;
+            justify-content: center;
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 20px;
+            box-shadow: 0 16px 32px rgba(31, 42, 36, 0.08);
+        }
+        .login-header { text-align: center; margin-bottom: 40px; }
+        .brand-icon { width: 72px; height: 72px; background-color: #2F6B4F; color: white; border-radius: 24px; display: inline-flex; justify-content: center; align-items: center; margin-bottom: 24px; box-shadow: 0 12px 24px rgba(47, 107, 79, 0.2); }
+        .brand-icon svg { width: 36px; height: 36px; }
+        .login-header h1 { font-size: 1.8rem; color: #1F2A24; margin-bottom: 12px; font-weight: 700; letter-spacing: -0.02em; }
+        .login-header p { color: #6B7C72; font-size: 0.95rem; line-height: 1.5; }
+        .login-form { display: flex; flex-direction: column; gap: 16px; }
+    </style>
+</head>
+<body class="login-body">
+    <main class="login-card">
+        <div class="login-header">
+            <div class="brand-icon">
+                <i data-lucide="leaf"></i>
+            </div>
+            <h1>Forest Finance</h1>
+            <p data-i18n="login_title">請輸入您的 User ID</p>
+        </div>
+        
+        <form id="login-form" class="login-form">
+            <div class="form-group">
+                <input type="text" id="userid-input" data-i18n-pl="login_pl" placeholder="例如: user_123" required autocomplete="off">
+            </div>
+            <button type="submit" class="submit-btn" data-i18n="login_btn">進入記帳本</button>
+        </form>
+    </main>
+    <script>
+        lucide.createIcons();
+        translatePage(); // run i18n
+        if (localStorage.getItem('forest_finance_active_user')) {
+            window.location.href = 'index.html';
+        }
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('userid-input').value.trim();
+            if(input) {
+                localStorage.setItem('forest_finance_active_user', input);
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
