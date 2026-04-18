@@ -12,6 +12,3 @@
 
 ## 🛠 技術棧
 HTML5、CSS3、Vanilla JS、Chart.js
-
-## 🚀 快速使用
-本專案為靜態檔案，點開 `login.html` 即可立即開始使用體驗！
